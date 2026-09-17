@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Surfaces */
+  --paper: #ffffff;
+  --surface: #f4f7fa;
+  --border: #e2e8f0;
+
+  /* Text */
+  --ink: #0f172a;
+  --ink-soft: #64748b;
+
+  /* Brand actions — red + orange identity */
+  --primary: #e11d2e; /* CTA red */
+  --primary-ink: #ffffff;
+  --sienna: #e11d2e; /* "Exclusif" badge / reveal */
+  --gold: #e8590c; /* stat figures, verified dates (AA-large on white) */
+  --accent: #ff7a29; /* orange highlight */
+  --accent-soft: #ff9a4d; /* orange on dark surfaces */
+
+  /* Dark zones (hero shell + research band) */
+  --hero: #241316;
+  --hero-deep: #1a0e10;
+  --dark: #0d0d10;
+  --dark-card: #141418;
+  --dark-line: #26262c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  width: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.022em;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Horizontal carousels: scroll-snap rail with hidden scrollbar */
+.rail {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.rail > * {
+  scroll-snap-align: start;
+}
+
+/* Full-width running logo bar */
+.marquee {
+  position: relative;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 48s linear infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Long-form editorial prose retained for store-page guides */
+.prose-carnet {
+  font-size: 1rem;
+  line-height: 1.7;
+  max-width: 42rem;
+  color: var(--ink);
+}
+.prose-carnet p + p {
+  margin-top: 1rem;
+}
+
+/* Liquid glass. Glass over flat white reads as plain white, so pages that use it
+   sit on .glass-stage — a warm ambient field for the material to tint against. */
+@layer components {
+  .glass-stage {
+    background:
+      radial-gradient(60rem 38rem at 8% -8%, rgba(255, 138, 61, 0.2), transparent 62%),
+      radial-gradient(48rem 34rem at 100% 12%, rgba(16, 185, 129, 0.09), transparent 60%),
+      radial-gradient(44rem 30rem at 45% 105%, rgba(255, 196, 107, 0.2), transparent 62%),
+      #fbf7f3;
+  }
+
+  .glass {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    /* Bright top edge = light catching the material */
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 12px 32px -14px rgba(120, 60, 20, 0.2);
+  }
+
+  .glass-interactive {
+    transition:
+      transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* Specular sheen that crosses the surface once on hover */
+  .glass-interactive::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.5) 50%, transparent 65%);
+    transform: translateX(-100%);
+  }
+
+  @media (hover: hover) {
+    .glass-interactive:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 1),
+        0 2px 4px rgba(15, 23, 42, 0.04),
+        0 22px 44px -16px rgba(120, 60, 20, 0.32);
+    }
+    .glass-interactive:hover::after {
+      transform: translateX(100%);
+      transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      background: #fff;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    .glass {
+      background: #fff;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      border-color: #475569;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glass-interactive:hover {
+      transform: none;
+    }
+    .glass-interactive::after {
+      display: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail {
+    scroll-behavior: auto;
+  }
+  /* No self-running motion: fall back to a manually scrollable row */
+  .marquee {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .marquee::-webkit-scrollbar {
+    display: none;
+  }
+  .marquee-track {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
