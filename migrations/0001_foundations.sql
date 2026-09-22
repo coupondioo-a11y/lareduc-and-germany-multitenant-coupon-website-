@@ -363,9 +363,9 @@ insert into sites (
   country_code, primary_domain, is_active, brand_name, language, locale,
   currency, timezone, store_slug_pattern, category_path, site_url
 )
-select 'FR', '__REPLACE_WITH_FR_DOMAIN__', true, '__REPLACE_WITH_FR_BRAND_NAME__',
+select 'FR', 'lareduc.fr', true, 'Lareduc',
        'fr', 'fr-FR', 'EUR', 'Europe/Paris', 'code-promo-{store}', 'coupon-category',
-       'https://__REPLACE_WITH_FR_DOMAIN__'
+       'https://lareduc.fr'
 where not exists (select 1 from sites where country_code = 'FR');
 
 insert into site_secrets (site_id)
