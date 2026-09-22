@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Database, Radar, ShieldCheck } from "lucide-react";
 import { BrandTile } from "./BrandMark";
-import { siteStats, stores } from "@/lib/fixtures";
+import { num } from "@/lib/format";
+import type { Store } from "@/lib/types";
 
 const sideCards = [
   {
@@ -22,7 +23,15 @@ const sideCards = [
   },
 ];
 
-export function ResearchSection() {
+export function ResearchSection({
+  stores,
+  brandName,
+  counts,
+}: {
+  stores: Store[];
+  brandName: string;
+  counts: { storeCount: number; couponCount: number; categoryCount: number };
+}) {
   const tiles = stores.slice(0, 15);
 
   return (
@@ -44,26 +53,28 @@ export function ResearchSection() {
               Index boutiques · 2026
             </p>
             <h3 className="mt-4 text-2xl font-extrabold sm:text-[28px]">
-              L&apos;index des boutiques lareduc.fr
+              L&apos;index des boutiques {brandName.toLowerCase()}
             </h3>
             <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-white/55">
               Toutes les boutiques partenaires classées par catégorie, nombre de codes et taux de
               réussite — en direct depuis notre base, pas depuis un communiqué de presse.
             </p>
 
-            <ul className="mt-8 flex flex-wrap gap-2.5">
-              {tiles.map((s) => (
-                <li key={s.slug}>
-                  <BrandTile store={s} size={54} />
-                </li>
-              ))}
-            </ul>
+            {tiles.length > 0 ? (
+              <ul className="mt-8 flex flex-wrap gap-2.5">
+                {tiles.map((s) => (
+                  <li key={s.slug}>
+                    <BrandTile store={s} size={54} />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
 
             <dl className="mt-8 grid grid-cols-3 gap-4 rounded-card bg-black/45 px-4 py-6 text-center">
               {[
-                { n: siteStats.shopsListed, l: "Boutiques listées" },
-                { n: siteStats.activeCodes, l: "Codes actifs" },
-                { n: siteStats.categoryCount, l: "Catégories" },
+                { n: num(counts.storeCount), l: "Boutiques listées" },
+                { n: num(counts.couponCount), l: "Codes actifs" },
+                { n: num(counts.categoryCount), l: "Catégories" },
               ].map((s) => (
                 <div key={s.l}>
                   <dt className="sr-only">{s.l}</dt>

@@ -4,13 +4,24 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BrandTile } from "./BrandMark";
-import { heroBanners, getStore } from "@/lib/fixtures";
+import type { Store } from "@/lib/types";
 
-export function BannerCarousel() {
+export interface HeroBanner {
+  id: string;
+  headline: string;
+  figure: string;
+  cta: string;
+  from: string;
+  to: string;
+  store: Store;
+}
+
+export function BannerCarousel({ banners }: { banners: HeroBanner[] }) {
   const [i, setI] = useState(0);
-  const banner = heroBanners[i];
-  const store = getStore(banner.storeSlug)!;
-  const go = (d: 1 | -1) => setI((v) => (v + d + heroBanners.length) % heroBanners.length);
+  if (banners.length === 0) return null;
+
+  const banner = banners[i];
+  const go = (d: 1 | -1) => setI((v) => (v + d + banners.length) % banners.length);
 
   const arrow =
     "absolute top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-hair bg-paper text-ink shadow-lift transition-colors duration-200 hover:bg-surface lg:inline-flex";
@@ -37,15 +48,15 @@ export function BannerCarousel() {
         </span>
 
         <div className="relative flex min-h-[260px] flex-col justify-end gap-4 p-6 sm:min-h-[320px] sm:p-8">
-          <BrandTile store={store} size={72} />
+          <BrandTile store={banner.store} size={72} />
           <div>
-            <p className="text-sm font-semibold text-black/70">{store.name}</p>
+            <p className="text-sm font-semibold text-black/70">{banner.store.name}</p>
             <p className="mt-1 max-w-lg text-xl font-bold leading-snug text-black sm:text-2xl">
               {banner.headline}
             </p>
           </div>
           <Link
-            href={`/store/${store.slug}/`}
+            href={`/store/${banner.store.slug}/`}
             className="inline-flex h-11 w-fit items-center rounded-card bg-primary px-5 text-[15px] font-semibold text-primary-ink transition-opacity duration-200 hover:opacity-90"
           >
             {banner.cta}
@@ -54,11 +65,11 @@ export function BannerCarousel() {
       </article>
 
       <div className="mt-4 flex justify-center gap-1">
-        {heroBanners.map((b, n) => (
+        {banners.map((b, n) => (
           <button
             key={b.id}
             type="button"
-            aria-label={`Afficher l'offre ${n + 1} sur ${heroBanners.length}`}
+            aria-label={`Afficher l'offre ${n + 1} sur ${banners.length}`}
             aria-current={n === i}
             onClick={() => setI(n)}
             className="inline-flex h-11 w-11 items-center justify-center"

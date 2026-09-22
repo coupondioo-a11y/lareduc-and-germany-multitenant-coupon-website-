@@ -1,23 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  couponsForStore,
-  getStore,
-  ratingFor,
-  realReviews,
-  reviews as allReviews,
-  stores,
-} from "@/lib/fixtures";
+import { getSiteContext } from "@/lib/site-context";
+import { getCouponsForStore, getOtherStores, getReviewsForStore, getStoreBySlug } from "@/lib/db/queries";
 import { StorePageBody } from "./StorePageBody";
 
-export const revalidate = 86400;
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const MONTH_YEAR = new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-
-export function generateStaticParams() {
-  return stores.map((s) => ({ slug: s.slug }));
-}
 
 export async function generateMetadata({
   params,
@@ -25,28 +12,33 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const store = getStore(slug);
+  const site = await getSiteContext();
+  const store = await getStoreBySlug(site.id, slug);
   if (!store) return {};
-  const best = couponsForStore(store.slug).find((c) => c.discountValue)?.discountValue;
+  const coupons = await getCouponsForStore(site.id, store.id!);
+  const best = coupons.find((c) => c.discountValue)?.discountValue;
   const bestText = best ? `${best} ` : "";
   return {
     title: { absolute: `Code promo ${store.name} : ${bestText}vérifié en ${MONTH_YEAR}` },
     description: `Tous les codes promo ${store.name} testés à la main et datés. ${store.couponCount} offres actives, la meilleure à ${best ?? "consulter"} en ${MONTH_YEAR}.`,
-    alternates: { canonical: `${SITE_URL}/store/${store.slug}/` },
+    alternates: { canonical: `${site.siteUrl}/store/${store.slug}/` },
   };
 }
 
 export default async function StorePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const store = getStore(slug);
+  const site = await getSiteContext();
+  const store = await getStoreBySlug(site.id, slug);
   if (!store) notFound();
 
-  const list = couponsForStore(store.slug);
-  const rating = ratingFor(store.slug);
-  const genuineReviews = realReviews(store.slug);
-  const seededCount = (allReviews[store.slug] ?? []).length - genuineReviews.length;
-  const otherStores = stores.filter((s) => s.slug !== store.slug);
-  const contentApproved = !!store.content; // fixtures: content present == approved
+  const [list, { genuine: genuineReviews, seededCount }, otherStores] = await Promise.all([
+    getCouponsForStore(site.id, store.id!),
+    getReviewsForStore(site.id, store.id!),
+    getOtherStores(site.id, store.slug, 12),
+  ]);
+
+  const rating = { value: store.rating, count: store.ratingCount };
+  const contentApproved = !!store.content;
 
   const hasCode = (code?: string) => !!code && code.length > 0;
 
@@ -56,15 +48,15 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
       {
         "@type": "Organization",
         name: store.name,
-        url: `${SITE_URL}/store/${store.slug}/`,
+        url: `${site.siteUrl}/store/${store.slug}/`,
         description: store.blurb,
       },
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Accueil", item: `${SITE_URL}/` },
-          { "@type": "ListItem", position: 2, name: store.category, item: `${SITE_URL}/#categories` },
-          { "@type": "ListItem", position: 3, name: store.name, item: `${SITE_URL}/store/${store.slug}/` },
+          { "@type": "ListItem", position: 1, name: "Accueil", item: `${site.siteUrl}/` },
+          { "@type": "ListItem", position: 2, name: store.category, item: `${site.siteUrl}/#categories` },
+          { "@type": "ListItem", position: 3, name: store.name, item: `${site.siteUrl}/store/${store.slug}/` },
         ],
       },
       {

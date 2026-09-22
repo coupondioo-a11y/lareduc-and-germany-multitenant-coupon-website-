@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { LogoMarquee } from "./LogoMarquee";
 import { SearchField } from "./SearchField";
+import type { Store } from "@/lib/types";
 
-export function Hero() {
+export function Hero({ stores }: { stores: Store[] }) {
   return (
     <section className="bg-hero pb-36 pt-14 text-white sm:pt-20">
       <div className="mx-auto max-w-shell px-4 text-center sm:px-6">
@@ -30,7 +31,7 @@ export function Hero() {
       </div>
 
       <div className="mt-10">
-        <LogoMarquee />
+        <LogoMarquee stores={stores} />
       </div>
     </section>
   );

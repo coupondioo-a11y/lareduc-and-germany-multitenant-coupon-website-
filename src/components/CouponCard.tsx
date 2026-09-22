@@ -5,10 +5,10 @@ import { useId, useState } from "react";
 import { ArrowUpRight, ChevronDown, ShieldCheck, Tag } from "lucide-react";
 import { BrandTile } from "./BrandMark";
 import { CouponRevealButton } from "./CouponRevealButton";
-import type { Coupon, Store } from "@/lib/fixtures";
+import type { Coupon, Store } from "@/lib/types";
 import { dateFr, dateFrShort, maskCode, num } from "@/lib/format";
 
-type CardStore = Pick<Store, "slug" | "name" | "domain" | "affiliateUrl" | "brand">;
+type CardStore = Pick<Store, "id" | "slug" | "name" | "domain" | "affiliateUrl" | "brand">;
 
 export function CouponCard({
   coupon,

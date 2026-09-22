@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { BrandTile } from "./BrandMark";
-import { stores } from "@/lib/fixtures";
+import type { Store } from "@/lib/types";
 
 /**
  * Full-bleed running logo bar. The track holds the list twice so the
  * -50% keyframe loops seamlessly; the duplicate is hidden from a11y.
  * Reduced motion turns it into a manually scrollable row (globals.css).
  */
-export function LogoMarquee() {
+export function LogoMarquee({ stores }: { stores: Store[] }) {
+  if (stores.length === 0) return null;
   const lane = [...stores, ...stores];
 
   return (

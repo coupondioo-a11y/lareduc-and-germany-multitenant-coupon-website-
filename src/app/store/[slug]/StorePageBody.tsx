@@ -7,7 +7,7 @@ import { CouponCard } from "@/components/CouponCard";
 import { StoreClickButton } from "@/components/StoreClickButton";
 import { StoreLogo } from "@/components/StoreLogo";
 import { StarRating } from "@/components/StarRating";
-import type { Coupon, Review, Store } from "@/lib/fixtures";
+import type { Coupon, Review, Store } from "@/lib/types";
 import { dateFr, num } from "@/lib/format";
 
 type Tab = "all" | "code" | "deal";
@@ -99,7 +99,7 @@ export function StorePageBody({
         <aside className="order-2 lg:order-1 lg:sticky lg:top-6 lg:h-fit">
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center justify-center rounded-card border border-hair bg-white p-4">
-              <StoreLogo name={store.name} size={72} />
+              <StoreLogo name={store.name} brand={store.brand} size={72} />
             </div>
             <h1 className="mt-4 font-serif text-xl text-ink sm:text-2xl">Codes promo {store.name}</h1>
             <div className="mt-2">

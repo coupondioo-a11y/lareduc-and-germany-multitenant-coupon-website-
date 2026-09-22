@@ -2,14 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { StoreLogo } from "@/components/StoreLogo";
-import { stores } from "@/lib/fixtures";
+import { getSiteContext } from "@/lib/site-context";
+import { getAllStores } from "@/lib/db/queries";
 import { num } from "@/lib/format";
 
 const LETTERS = "abcdefghijklmnopqrstuvwxyz".split("");
-
-export function generateStaticParams() {
-  return LETTERS.map((letter) => ({ letter }));
-}
 
 export async function generateMetadata({
   params,
@@ -33,6 +30,8 @@ export default async function AllStoresLetterPage({
   const letter = rawLetter.toLowerCase();
   if (!LETTERS.includes(letter)) notFound();
 
+  const site = await getSiteContext();
+  const stores = await getAllStores(site.id);
   const matches = stores
     .filter((s) => s.name.toLowerCase().startsWith(letter))
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
@@ -79,7 +78,7 @@ export default async function AllStoresLetterPage({
                   href={`/store/${s.slug}/`}
                   className="flex items-center gap-3 rounded-card border border-hair p-3 transition-colors duration-200 hover:bg-surface"
                 >
-                  <StoreLogo name={s.name} size={44} />
+                  <StoreLogo name={s.name} brand={s.brand} size={44} />
                   <span className="min-w-0">
                     <span className="block font-medium text-ink">{s.name}</span>
                     <span className="block text-[13px] text-ink-soft">

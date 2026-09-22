@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { Coupon, Store } from "@/lib/fixtures";
+import type { Coupon, Store } from "@/lib/types";
 import { isExternalUrl, resolveOutboundUrl } from "@/lib/outbound";
+import { trackCouponClick } from "@/app/actions/track";
 
 /**
  * The signature coupon-site interaction: reveals the code on its own
@@ -16,7 +17,7 @@ export function CouponRevealButton({
   children,
 }: {
   coupon: Pick<Coupon, "id" | "publicId" | "destinationUrl">;
-  store: Pick<Store, "slug" | "affiliateUrl" | "domain">;
+  store: Pick<Store, "id" | "slug" | "affiliateUrl" | "domain">;
   className?: string;
   children: ReactNode;
 }) {
@@ -28,6 +29,7 @@ export function CouponRevealButton({
     const affiliateUrl = resolveOutboundUrl(coupon, store);
     if (isExternalUrl(affiliateUrl)) {
       window.location.href = affiliateUrl;
+      if (store.id) void trackCouponClick(coupon.id, store.id);
     }
   }
 

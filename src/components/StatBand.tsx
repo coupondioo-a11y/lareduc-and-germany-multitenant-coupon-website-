@@ -1,13 +1,24 @@
 import { ListChecks, PiggyBank, Tag } from "lucide-react";
-import { siteStats } from "@/lib/fixtures";
 
-const items = [
-  { Icon: Tag, figure: siteStats.codesUsed, note: siteStats.codesUsedNote },
-  { Icon: PiggyBank, figure: siteStats.saved, note: siteStats.savedNote },
-  { Icon: ListChecks, figure: siteStats.verified, note: siteStats.verifiedNote },
-];
+export interface SiteStats {
+  codesUsed: string;
+  codesUsedNote: string;
+  saved: string;
+  savedNote: string;
+  verified: string;
+  verifiedNote: string;
+}
 
-export function StatBand() {
+/** Editorial copy, curated per site in admin -- no fallback numbers invented when it's empty. */
+export function StatBand({ stats }: { stats: SiteStats | null }) {
+  if (!stats) return null;
+
+  const items = [
+    { Icon: Tag, figure: stats.codesUsed, note: stats.codesUsedNote },
+    { Icon: PiggyBank, figure: stats.saved, note: stats.savedNote },
+    { Icon: ListChecks, figure: stats.verified, note: stats.verifiedNote },
+  ];
+
   return (
     <section className="border-y border-hair bg-paper py-14">
       <div className="mx-auto grid max-w-shell gap-10 px-4 sm:px-6 md:grid-cols-3">

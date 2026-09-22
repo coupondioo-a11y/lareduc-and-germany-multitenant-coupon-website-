@@ -1,4 +1,4 @@
-import type { Store } from "@/lib/fixtures";
+import type { Store } from "@/lib/types";
 
 /**
  * Stand-in for a real store logo. The Logo Manager will later serve a

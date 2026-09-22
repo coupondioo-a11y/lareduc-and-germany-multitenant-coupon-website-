@@ -7,10 +7,14 @@ import { PromoCardGrid } from "@/components/PromoCardGrid";
 import { ResearchSection } from "@/components/ResearchSection";
 import { StatBand } from "@/components/StatBand";
 import { StoreShowcase } from "@/components/StoreShowcase";
-import { categories } from "@/lib/fixtures";
-import { num } from "@/lib/format";
-
-export const revalidate = 3600;
+import { getSiteContext } from "@/lib/site-context";
+import {
+  getAllStores,
+  getFeaturedHomeCoupons,
+  getHeroSlides,
+  getSiteCounts,
+  getSiteStatsRow,
+} from "@/lib/db/queries";
 
 function SectionHead({
   title,
@@ -38,36 +42,61 @@ function SectionHead({
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const site = await getSiteContext();
+  const [stores, featured, banners, counts, stats] = await Promise.all([
+    getAllStores(site.id),
+    getFeaturedHomeCoupons(site.id, 30),
+    getHeroSlides(site.id),
+    getSiteCounts(site.id),
+    getSiteStatsRow(site.id),
+  ]);
+
+  const storeById = new Map(stores.map((s) => [s.slug, s]));
+  const items = featured
+    .map((coupon) => {
+      const store = storeById.get(coupon.storeSlug);
+      return store ? { coupon, store } : null;
+    })
+    .filter((v): v is { coupon: (typeof featured)[number]; store: (typeof stores)[number] } => v !== null);
+
+  const showcaseItems = items.slice(0, 6);
+  const topCodeItems = items.slice(0, 12);
+  const dealItems = items.slice(0, 10);
+
   return (
     <>
-      <Hero />
+      <Hero stores={stores} />
 
       <div className="glass-stage pb-16">
-        {/* Exclusive banner, straddling the hero */}
         <div className="mx-auto -mt-24 max-w-shell px-4 sm:px-6">
-          <BannerCarousel />
+          <BannerCarousel banners={banners} />
         </div>
 
-        {/* Popular codes for top stores */}
-        <section className="mx-auto mt-16 max-w-shell px-4 sm:px-6">
-          <h2 className="text-center text-2xl font-extrabold text-ink sm:text-[28px]">
-            Codes promo populaires des grandes enseignes
-          </h2>
-          <div className="mt-8">
-            <StoreShowcase couponIds={["z1", "s1", "ue1", "n1", "sh1", "te1"]} />
-          </div>
-        </section>
+        {showcaseItems.length > 0 ? (
+          <section className="mx-auto mt-16 max-w-shell px-4 sm:px-6">
+            <h2 className="text-center text-2xl font-extrabold text-ink sm:text-[28px]">
+              Codes promo populaires des grandes enseignes
+            </h2>
+            <div className="mt-8">
+              <StoreShowcase items={showcaseItems} />
+            </div>
+          </section>
+        ) : null}
 
-        {/* Top promo codes */}
         <section id="top-codes" className="mx-auto mt-16 max-w-shell px-4 sm:px-6">
           <h2 className="text-center text-2xl font-extrabold text-ink sm:text-[28px]">
             Meilleurs codes promo
           </h2>
           <div className="mt-8">
-            <PromoCardGrid
-              couponIds={["z2", "ue1", "az1", "lm1", "mr1", "a1", "sh1", "ca1", "cp1", "eu1", "f1", "c1"]}
-            />
+            {topCodeItems.length > 0 ? (
+              <PromoCardGrid items={topCodeItems} />
+            ) : (
+              <p className="text-center text-[15px] text-ink-soft">
+                Aucune offre pour le moment. La synchronisation ajoute des boutiques et des codes en
+                continu.
+              </p>
+            )}
           </div>
           <div className="mt-8 flex justify-center">
             <Link
@@ -80,50 +109,21 @@ export default function HomePage() {
         </section>
       </div>
 
-      <StatBand />
+      <StatBand stats={stats} />
 
-      <div className="glass-stage py-16">
-        {/* Top deals */}
-        <section className="mx-auto max-w-shell px-4 sm:px-6">
-          <SectionHead title="Top offres" href="/all-stores/a/" linkLabel="Toutes les offres" />
-          <div className="mt-6">
-            <DealGrid couponIds={["f1", "z1", "n1", "sa1", "c1", "lm1", "ca1", "te1", "eu1", "cp1"]} />
-          </div>
-        </section>
-
-        {/* Seasonal block */}
-        <section id="nouveautes" className="mx-auto mt-16 max-w-shell px-4 sm:px-6">
-          <SectionHead
-            title="Rentrée : maison & déco"
-            href="/all-stores/a/"
-            linkLabel="Toutes les offres maison"
-          />
-          <div className="mt-6">
-            <DealGrid couponIds={["lm1", "c1", "te1", "ca1", "mr1", "az1", "sh1", "a1", "s1", "z3"]} />
-          </div>
-        </section>
-      </div>
-
-      {/* Categories */}
-      <section id="categories" className="mx-auto mt-16 max-w-shell px-4 sm:px-6">
-        <SectionHead title="Parcourir par catégorie" />
-        <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {categories.map((cat) => (
-            <li key={cat.slug}>
-              <Link
-                href="/#categories"
-                className="flex items-center justify-between rounded-card border border-hair bg-paper px-4 py-3.5 text-[15px] transition-colors duration-200 hover:bg-surface"
-              >
-                <span className="font-medium text-ink">{cat.name}</span>
-                <span className="text-[13px] text-ink-soft">{num(cat.storeCount)}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {dealItems.length > 0 ? (
+        <div className="glass-stage py-16">
+          <section className="mx-auto max-w-shell px-4 sm:px-6">
+            <SectionHead title="Top offres" href="/all-stores/a/" linkLabel="Toutes les offres" />
+            <div className="mt-6">
+              <DealGrid items={dealItems} />
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <div className="mt-16">
-        <ResearchSection />
+        <ResearchSection stores={stores} brandName={site.brandName} counts={counts} />
       </div>
 
       {/* Newsletter */}
