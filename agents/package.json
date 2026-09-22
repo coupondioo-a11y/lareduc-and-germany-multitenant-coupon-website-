@@ -1,0 +1,13 @@
+{
+  "name": "coupon-fr-scraper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Auto-add competitor scraper: discover -> scrape -> extract -> sync. Standalone from the Next.js app.",
+  "type": "module",
+  "scripts": {
+    "run": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2"
+  }
+}
