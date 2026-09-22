@@ -22,7 +22,7 @@ const columns = [
   },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({ brandName }: { brandName: string }) {
   return (
     <footer className="bg-hero-deep text-white">
       <div className="mx-auto max-w-shell px-4 py-14 sm:px-6">
@@ -59,7 +59,7 @@ export function SiteFooter() {
           Certains liens de ce site sont des liens d&apos;affiliation : un achat effectué après un
           clic peut nous rémunérer, sans surcoût pour vous. Cela n&apos;influence pas la vérification
           des codes.
-          <br />© {new Date().getFullYear()} LaReduc.fr
+          <br />© {new Date().getFullYear()} {brandName}
         </p>
       </div>
     </footer>

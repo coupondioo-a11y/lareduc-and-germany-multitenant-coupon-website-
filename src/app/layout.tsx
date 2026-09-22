@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { getSiteContext } from "@/lib/site-context";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -11,22 +12,25 @@ const sans = Inter({
   variable: "--font-sans",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteContext();
+  return {
+    metadataBase: new URL(site.siteUrl),
+    title: {
+      default: `${site.brandName} — codes promo et réductions vérifiés`,
+      template: `%s | ${site.brandName}`,
+    },
+    description:
+      "Tous les codes promo et réductions en un coup d'œil, vérifiés régulièrement.",
+    openGraph: { locale: site.locale.replace("-", "_"), type: "website", siteName: site.brandName },
+  };
+}
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: "LaReduc.fr — codes promo et réductions vérifiés",
-    template: "%s | LaReduc.fr",
-  },
-  description:
-    "Tous les codes promo et réductions en un coup d'œil : 31 000 offres actives, vérifiées chaque mois, sur plus de 7 000 boutiques.",
-  openGraph: { locale: "fr_FR", type: "website", siteName: "LaReduc.fr" },
-};
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const site = await getSiteContext();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={sans.variable}>
+    <html lang={site.language} className={sans.variable}>
       <body>
         <a
           href="#contenu"
@@ -34,9 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Aller au contenu
         </a>
-        <SiteHeader />
+        <SiteHeader brandName={site.brandName} />
         <main id="contenu">{children}</main>
-        <SiteFooter />
+        <SiteFooter brandName={site.brandName} />
       </body>
     </html>
   );

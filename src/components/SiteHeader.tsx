@@ -3,11 +3,11 @@ import { ChevronDown } from "lucide-react";
 import { SearchField } from "./SearchField";
 import { SiteLogo } from "./SiteLogo";
 
-export function SiteHeader() {
+export function SiteHeader({ brandName }: { brandName: string }) {
   return (
     <header className="bg-hero-deep text-white">
       <div className="mx-auto flex max-w-shell items-center gap-6 px-4 py-4 sm:px-6">
-        <Link href="/" aria-label="LaReduc.fr — accueil" className="shrink-0 rounded-card">
+        <Link href="/" aria-label={`${brandName} — accueil`} className="shrink-0 rounded-card">
           <SiteLogo />
         </Link>
 
