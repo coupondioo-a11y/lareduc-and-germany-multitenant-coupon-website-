@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { brandColorFor } from "@/lib/brand-color";
+import { stripMarkdownDeep } from "@/lib/sanitize";
 import type { HeroBanner } from "@/components/BannerCarousel";
 import type { SiteStats } from "@/components/StatBand";
 import type { Coupon, Review, Store } from "@/lib/types";
@@ -47,7 +48,10 @@ function mapStore(row: StoreRow, rating: { value: number; count: number }): Stor
     affiliateUrl: row.affiliate_url ?? "",
     brand: brandColorFor(row.name),
     // FAQ schema only fires when approved, per the skill's content_status gate.
-    content: row.content_status === "approved" ? row.content_body ?? undefined : undefined,
+    content:
+      row.content_status === "approved" && row.content_body
+        ? stripMarkdownDeep(row.content_body)
+        : undefined,
   };
 }
 

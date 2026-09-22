@@ -5,7 +5,8 @@
   "description": "Auto-add competitor scraper: discover -> scrape -> extract -> sync. Standalone from the Next.js app.",
   "type": "module",
   "scripts": {
-    "run": "node index.js"
+    "run": "node index.js",
+    "content": "node content/index.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2"
