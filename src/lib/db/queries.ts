@@ -1,5 +1,6 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@/lib/supabase/public";
 import { brandColorFor } from "@/lib/brand-color";
 import { stripMarkdownDeep } from "@/lib/sanitize";
 import type { HeroBanner } from "@/components/BannerCarousel";
@@ -91,7 +92,7 @@ function mapCoupon(row: CouponRow): Coupon {
 }
 
 async function ratingFor(siteId: string, storeId: string): Promise<{ value: number; count: number }> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("store_reviews")
     .select("rating")
@@ -111,7 +112,7 @@ const COUPON_SELECT =
 
 /** Best-offer ordering per database.md: featured first, then most-clicked, active + not expired only. */
 export async function getFeaturedHomeCoupons(siteId: string, limit: number): Promise<Coupon[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from("coupons")
@@ -127,7 +128,7 @@ export async function getFeaturedHomeCoupons(siteId: string, limit: number): Pro
 }
 
 export async function getStoreBySlug(siteId: string, slug: string): Promise<Store | null> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("stores")
     .select("id, name, slug, description, affiliate_url, coupon_count, click_count, content_body, content_status")
@@ -142,7 +143,7 @@ export async function getStoreBySlug(siteId: string, slug: string): Promise<Stor
 }
 
 export async function getCouponsForStore(siteId: string, storeId: string): Promise<Coupon[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from("coupons")
@@ -161,7 +162,7 @@ export async function getCouponByPublicId(
   siteId: string,
   publicId: number
 ): Promise<{ coupon: Coupon; store: Store } | null> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("coupons")
     .select(COUPON_SELECT)
@@ -177,7 +178,7 @@ export async function getCouponByPublicId(
 }
 
 export async function getAllStores(siteId: string): Promise<Store[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("stores")
     .select("id, name, slug, description, affiliate_url, coupon_count, click_count, content_body, content_status")
@@ -194,7 +195,7 @@ export async function getReviewsForStore(
   siteId: string,
   storeId: string
 ): Promise<{ genuine: Review[]; seededCount: number }> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("store_reviews")
     .select("id, author_name, rating, body, created_at, is_seeded, helpful_count")
@@ -218,10 +219,26 @@ export async function getReviewsForStore(
   return { genuine, seededCount: rows.filter((r) => r.is_seeded).length };
 }
 
+export async function getAllCouponRefs(
+  siteId: string
+): Promise<{ publicId: number; storeSlug: string; createdAt: string }[]> {
+  const supabase = createPublicClient();
+  const { data } = await supabase
+    .from("coupons")
+    .select("public_id, created_at, store:stores(slug)")
+    .eq("site_id", siteId)
+    .eq("is_active", true);
+
+  return (data ?? []).map((row) => {
+    const store = Array.isArray(row.store) ? row.store[0] : row.store;
+    return { publicId: row.public_id, storeSlug: store?.slug ?? "", createdAt: row.created_at };
+  });
+}
+
 export async function getSiteCounts(
   siteId: string
 ): Promise<{ storeCount: number; couponCount: number; categoryCount: number }> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const [stores, coupons, categories] = await Promise.all([
     supabase.from("stores").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("is_active", true),
     supabase.from("coupons").select("id", { count: "exact", head: true }).eq("site_id", siteId).eq("is_active", true),
@@ -236,7 +253,7 @@ export async function getSiteCounts(
 }
 
 export async function getHeroSlides(siteId: string): Promise<HeroBanner[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("hero_slides")
     .select(
@@ -268,7 +285,7 @@ export async function getHeroSlides(siteId: string): Promise<HeroBanner[]> {
 }
 
 export async function getSiteStatsRow(siteId: string): Promise<SiteStats | null> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("site_stats")
     .select("codes_used_label, codes_used_note, saved_label, saved_note, verified_label, verified_note")
@@ -288,7 +305,7 @@ export async function getSiteStatsRow(siteId: string): Promise<SiteStats | null>
 }
 
 export async function getOtherStores(siteId: string, excludeSlug: string, limit: number): Promise<Store[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("stores")
     .select("id, name, slug, description, affiliate_url, coupon_count, click_count, content_body, content_status")
@@ -300,3 +317,31 @@ export async function getOtherStores(siteId: string, excludeSlug: string, limit:
 
   return Promise.all((data ?? []).map(async (row) => mapStore(row, await ratingFor(siteId, row.id))));
 }
+
+interface HomepageData {
+  stores: Store[];
+  featured: Coupon[];
+  banners: HeroBanner[];
+  counts: { storeCount: number; couponCount: number; categoryCount: number };
+  stats: SiteStats | null;
+}
+
+/**
+ * The root layout calls headers() to resolve the tenant, which forces every
+ * page to render per-request -- without this cache the homepage would re-run
+ * its full query set on every navigation. 1h matches the old ISR interval.
+ */
+export const getHomepageData = unstable_cache(
+  async (siteId: string): Promise<HomepageData> => {
+    const [stores, featured, banners, counts, stats] = await Promise.all([
+      getAllStores(siteId),
+      getFeaturedHomeCoupons(siteId, 30),
+      getHeroSlides(siteId),
+      getSiteCounts(siteId),
+      getSiteStatsRow(siteId),
+    ]);
+    return { stores, featured, banners, counts, stats };
+  },
+  ["homepage-data"],
+  { revalidate: 3600 }
+);

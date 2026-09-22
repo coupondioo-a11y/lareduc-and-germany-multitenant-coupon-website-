@@ -8,13 +8,7 @@ import { ResearchSection } from "@/components/ResearchSection";
 import { StatBand } from "@/components/StatBand";
 import { StoreShowcase } from "@/components/StoreShowcase";
 import { getSiteContext } from "@/lib/site-context";
-import {
-  getAllStores,
-  getFeaturedHomeCoupons,
-  getHeroSlides,
-  getSiteCounts,
-  getSiteStatsRow,
-} from "@/lib/db/queries";
+import { getHomepageData } from "@/lib/db/queries";
 
 function SectionHead({
   title,
@@ -44,13 +38,7 @@ function SectionHead({
 
 export default async function HomePage() {
   const site = await getSiteContext();
-  const [stores, featured, banners, counts, stats] = await Promise.all([
-    getAllStores(site.id),
-    getFeaturedHomeCoupons(site.id, 30),
-    getHeroSlides(site.id),
-    getSiteCounts(site.id),
-    getSiteStatsRow(site.id),
-  ]);
+  const { stores, featured, banners, counts, stats } = await getHomepageData(site.id);
 
   const storeById = new Map(stores.map((s) => [s.slug, s]));
   const items = featured
@@ -64,8 +52,19 @@ export default async function HomePage() {
   const topCodeItems = items.slice(0, 12);
   const dealItems = items.slice(0, 10);
 
+  // No SearchAction: there's no real query-based search route yet (SearchField
+  // just redirects to an A-Z letter page) -- emitting one would be structured
+  // data for a feature that doesn't work. Add it once /search exists for real.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: site.brandName,
+    url: site.siteUrl,
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Hero stores={stores} />
 
       <div className="glass-stage pb-16">
