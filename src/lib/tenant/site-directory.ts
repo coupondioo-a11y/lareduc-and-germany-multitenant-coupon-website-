@@ -23,6 +23,13 @@ export interface SiteRow {
   siteUrl: string;
   isActive: boolean;
   gaMeasurementId: string | null;
+  operatorName: string | null;
+  operatorAddress: string | null;
+  siret: string | null;
+  publicationDirector: string | null;
+  hostName: string | null;
+  hostAddress: string | null;
+  dpoEmail: string | null;
 }
 
 interface RawSiteRow {
@@ -42,6 +49,13 @@ interface RawSiteRow {
   site_url: string;
   is_active: boolean;
   ga_measurement_id: string | null;
+  operator_name: string | null;
+  operator_address: string | null;
+  siret: string | null;
+  publication_director: string | null;
+  host_name: string | null;
+  host_address: string | null;
+  dpo_email: string | null;
 }
 
 const TTL_MS = 60_000;
@@ -65,6 +79,13 @@ function normalize(r: RawSiteRow): SiteRow {
     siteUrl: r.site_url,
     isActive: r.is_active,
     gaMeasurementId: r.ga_measurement_id,
+    operatorName: r.operator_name,
+    operatorAddress: r.operator_address,
+    siret: r.siret,
+    publicationDirector: r.publication_director,
+    hostName: r.host_name,
+    hostAddress: r.host_address,
+    dpoEmail: r.dpo_email,
   };
 }
 
@@ -73,11 +94,11 @@ async function fetchSites(): Promise<SiteRow[]> {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) return [];
 
-  const params =
-    "is_active=eq.true&select=id,country_code,primary_domain,extra_domains,language,locale," +
-    "brand_name,logo_url,theme,currency,timezone,store_slug_pattern,category_path,site_url,is_active,ga_measurement_id";
-
-  const res = await fetch(`${url}/rest/v1/sites?${params}`, {
+  // select('*') deliberately -- this is the shared tenant-resolution path every
+  // page depends on, so it must survive a deploy that lands before its own
+  // migration runs. A hardcoded column list here would 400 the whole site the
+  // moment a new column is referenced but not yet migrated.
+  const res = await fetch(`${url}/rest/v1/sites?is_active=eq.true&select=*`, {
     headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
     next: { revalidate: 60 },
   });
