@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { getSiteContext } from "@/lib/site-context";
 
 const sans = Inter({
@@ -41,6 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader brandName={site.brandName} />
         <main id="contenu">{children}</main>
         <SiteFooter brandName={site.brandName} />
+        {site.gaMeasurementId ? <GoogleAnalytics measurementId={site.gaMeasurementId} /> : null}
       </body>
     </html>
   );

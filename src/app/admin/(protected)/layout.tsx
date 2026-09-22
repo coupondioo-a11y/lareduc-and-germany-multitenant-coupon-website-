@@ -25,6 +25,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <nav className="flex flex-col gap-2 text-sm">
           <Link href="/admin">Dashboard</Link>
           <Link href="/admin/sites">Sites</Link>
+          <Link href="/admin/push">Push</Link>
         </nav>
       </aside>
       <main className="flex-1 p-6">

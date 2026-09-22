@@ -63,3 +63,58 @@ export async function createSite(formData: FormData) {
 
   redirect("/admin/sites");
 }
+
+export async function sendTestPush(formData: FormData) {
+  const profile = await getCurrentAdminProfile();
+  requirePermission(profile, "push_notifications");
+
+  const siteId = String(formData.get("siteId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  if (!siteId || !title || !body) throw new Error("Champs requis manquants");
+
+  const admin = createAdminClient();
+  const { data: secrets } = await admin
+    .from("site_secrets")
+    .select("vapid_public, vapid_private")
+    .eq("site_id", siteId)
+    .maybeSingle();
+
+  if (!secrets?.vapid_public || !secrets?.vapid_private) {
+    throw new Error("Aucune clé VAPID pour ce site");
+  }
+
+  webpush.setVapidDetails("mailto:admin@example.com", secrets.vapid_public, secrets.vapid_private);
+
+  const { data: subscriptions } = await admin
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth")
+    .eq("site_id", siteId);
+
+  let sent = 0;
+  for (const sub of subscriptions ?? []) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        JSON.stringify({ title, body })
+      );
+      sent += 1;
+    } catch (err) {
+      // 404/410 = the browser dropped the subscription -- clean it up rather than retry forever.
+      const status = (err as { statusCode?: number }).statusCode;
+      if (status === 404 || status === 410) {
+        await admin.from("push_subscriptions").delete().eq("id", sub.id);
+      }
+    }
+  }
+
+  await admin.from("push_notifications_log").insert({
+    site_id: siteId,
+    title,
+    body,
+    sent_count: sent,
+    sent_by: profile!.id,
+  });
+
+  redirect("/admin/push");
+}

@@ -22,6 +22,7 @@ export interface SiteRow {
   categoryPath: string;
   siteUrl: string;
   isActive: boolean;
+  gaMeasurementId: string | null;
 }
 
 interface RawSiteRow {
@@ -40,6 +41,7 @@ interface RawSiteRow {
   category_path: string;
   site_url: string;
   is_active: boolean;
+  ga_measurement_id: string | null;
 }
 
 const TTL_MS = 60_000;
@@ -62,6 +64,7 @@ function normalize(r: RawSiteRow): SiteRow {
     categoryPath: r.category_path,
     siteUrl: r.site_url,
     isActive: r.is_active,
+    gaMeasurementId: r.ga_measurement_id,
   };
 }
 
@@ -72,7 +75,7 @@ async function fetchSites(): Promise<SiteRow[]> {
 
   const params =
     "is_active=eq.true&select=id,country_code,primary_domain,extra_domains,language,locale," +
-    "brand_name,logo_url,theme,currency,timezone,store_slug_pattern,category_path,site_url,is_active";
+    "brand_name,logo_url,theme,currency,timezone,store_slug_pattern,category_path,site_url,is_active,ga_measurement_id";
 
   const res = await fetch(`${url}/rest/v1/sites?${params}`, {
     headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },

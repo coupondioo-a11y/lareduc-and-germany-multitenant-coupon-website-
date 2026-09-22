@@ -6,6 +6,7 @@ import { AlertTriangle, Bookmark, ChevronDown, Clock, Star } from "lucide-react"
 import { CouponCard } from "@/components/CouponCard";
 import { StoreClickButton } from "@/components/StoreClickButton";
 import { StoreLogo } from "@/components/StoreLogo";
+import { PushSubscribeButton } from "@/components/PushSubscribeButton";
 import { StarRating } from "@/components/StarRating";
 import type { Coupon, Review, Store } from "@/lib/types";
 import { dateFr, num } from "@/lib/format";
@@ -124,6 +125,9 @@ export function StorePageBody({
                 store={store}
                 className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-hair text-sm font-medium text-ink transition-colors duration-200 hover:bg-surface"
               />
+            </div>
+            <div className="mt-3 flex justify-center">
+              <PushSubscribeButton storeSlug={store.slug} />
             </div>
           </div>
 
