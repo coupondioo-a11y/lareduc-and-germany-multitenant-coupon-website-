@@ -14,7 +14,12 @@ export default async function AdminStoresPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold">Boutiques</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Boutiques</h1>
+        <Link href="/admin/stores/new" className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white">
+          Ajouter une boutique
+        </Link>
+      </div>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b text-left text-neutral-500">

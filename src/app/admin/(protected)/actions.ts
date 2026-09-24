@@ -64,6 +64,49 @@ export async function createSite(formData: FormData) {
   redirect("/admin/sites");
 }
 
+/** Every content table has site_id ... on delete cascade, so this is a clean cut, not an orphan-leaving one. */
+export async function deleteSite(formData: FormData) {
+  const profile = await getCurrentAdminProfile();
+  requirePermission(profile, "security");
+
+  const siteId = String(formData.get("siteId") ?? "");
+  const confirmCode = String(formData.get("confirmCode") ?? "").trim().toUpperCase();
+
+  const admin = createAdminClient();
+  const { data: site } = await admin.from("sites").select("country_code").eq("id", siteId).maybeSingle();
+  if (!site) throw new Error("Site introuvable");
+  if (site.country_code !== confirmCode) {
+    throw new Error(`Tapez ${site.country_code} pour confirmer la suppression`);
+  }
+
+  await admin.from("sites").delete().eq("id", siteId);
+
+  const cookieStore = await cookies();
+  if (cookieStore.get("admin_site_id")?.value === siteId) {
+    cookieStore.delete("admin_site_id");
+  }
+
+  redirect("/admin/sites");
+}
+
+export async function updateSiteVerification(formData: FormData) {
+  const profile = await getCurrentAdminProfile();
+  requirePermission(profile, "security");
+
+  const siteId = String(formData.get("siteId") ?? "");
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("sites")
+    .update({
+      ga_measurement_id: String(formData.get("ga_measurement_id") ?? "").trim() || null,
+      gsc_verification: String(formData.get("gsc_verification") ?? "").trim() || null,
+    })
+    .eq("id", siteId);
+
+  if (error) throw new Error(error.message);
+  redirect("/admin/sites");
+}
+
 export async function sendTestPush(formData: FormData) {
   const profile = await getCurrentAdminProfile();
   requirePermission(profile, "push_notifications");

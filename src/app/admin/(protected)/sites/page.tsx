@@ -24,6 +24,7 @@ export default async function AdminSitesPage() {
             <th>Domain</th>
             <th>Language</th>
             <th>Active</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -34,6 +35,11 @@ export default async function AdminSitesPage() {
               <td>{s.primary_domain}</td>
               <td>{s.language}</td>
               <td>{s.is_active ? "yes" : "no"}</td>
+              <td>
+                <Link href={`/admin/sites/${s.id}`} className="text-orange-700 hover:underline">
+                  Paramètres
+                </Link>
+              </td>
             </tr>
           ))}
         </tbody>

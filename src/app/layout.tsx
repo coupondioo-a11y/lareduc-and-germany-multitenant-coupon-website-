@@ -24,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Tous les codes promo et réductions en un coup d'œil, vérifiés régulièrement.",
     openGraph: { locale: site.locale.replace("-", "_"), type: "website", siteName: site.brandName },
+    ...(site.gscVerification ? { verification: { google: site.gscVerification } } : {}),
   };
 }
 

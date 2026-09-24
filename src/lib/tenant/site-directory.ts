@@ -23,6 +23,7 @@ export interface SiteRow {
   siteUrl: string;
   isActive: boolean;
   gaMeasurementId: string | null;
+  gscVerification: string | null;
   operatorName: string | null;
   operatorAddress: string | null;
   siret: string | null;
@@ -49,6 +50,7 @@ interface RawSiteRow {
   site_url: string;
   is_active: boolean;
   ga_measurement_id: string | null;
+  gsc_verification: string | null;
   operator_name: string | null;
   operator_address: string | null;
   siret: string | null;
@@ -79,6 +81,7 @@ function normalize(r: RawSiteRow): SiteRow {
     siteUrl: r.site_url,
     isActive: r.is_active,
     gaMeasurementId: r.ga_measurement_id,
+    gscVerification: r.gsc_verification,
     operatorName: r.operator_name,
     operatorAddress: r.operator_address,
     siret: r.siret,

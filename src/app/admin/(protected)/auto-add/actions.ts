@@ -15,10 +15,25 @@ export async function createTarget(formData: FormData) {
 
   const siteId = await getActiveSiteId();
   const admin = createAdminClient();
-  const { error } = await admin
+
+  // Domain already tracked for this site -- update its pattern instead of
+  // crashing on the unique constraint (a thrown server action leaves React's
+  // tree in a bad state, which is what caused the removeChild error too).
+  const { data: existing } = await admin
     .from("scrape_targets")
-    .insert({ site_id: siteId, domain, store_page_pattern: pattern });
-  if (error) throw new Error(error.message);
+    .select("id")
+    .eq("site_id", siteId)
+    .eq("domain", domain)
+    .maybeSingle();
+
+  if (existing) {
+    await admin.from("scrape_targets").update({ store_page_pattern: pattern, is_active: true }).eq("id", existing.id);
+  } else {
+    const { error } = await admin
+      .from("scrape_targets")
+      .insert({ site_id: siteId, domain, store_page_pattern: pattern });
+    if (error) throw new Error(error.message);
+  }
 
   revalidatePath("/admin/auto-add");
 }
