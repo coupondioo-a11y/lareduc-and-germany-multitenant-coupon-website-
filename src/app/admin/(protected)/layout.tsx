@@ -24,8 +24,21 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <aside className="w-56 shrink-0 border-r border-neutral-200 p-4">
         <nav className="flex flex-col gap-2 text-sm">
           <Link href="/admin">Dashboard</Link>
-          <Link href="/admin/sites">Sites</Link>
+          <Link href="/admin/stores">Boutiques</Link>
+          <Link href="/admin/coupons">Codes</Link>
+          <Link href="/admin/categories">Catégories</Link>
+          <Link href="/admin/flagged">Signalés</Link>
+          <Link href="/admin/automation">Automatisation</Link>
+          <Link href="/admin/auto-add">Auto-Add</Link>
+          <Link href="/admin/site-content">Contenu du site</Link>
+          <Link href="/admin/seo-content">Contenu SEO</Link>
+          <Link href="/admin/blog">Blog</Link>
           <Link href="/admin/push">Push</Link>
+          <Link href="/admin/newsletter">Newsletter</Link>
+          <Link href="/admin/reviews">Avis</Link>
+          <Link href="/admin/security">Sécurité</Link>
+          <Link href="/admin/users">Utilisateurs</Link>
+          <Link href="/admin/sites">Sites</Link>
         </nav>
       </aside>
       <main className="flex-1 p-6">

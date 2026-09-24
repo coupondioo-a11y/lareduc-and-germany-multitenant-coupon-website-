@@ -1,12 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSiteByHost } from "@/lib/tenant/site-directory";
+import { hasSmugglingSignature, isRateLimited, stripInternalHeaders } from "@/lib/security";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };
 
 export async function middleware(request: NextRequest) {
+  if (hasSmugglingSignature(request)) {
+    return new NextResponse("Bad Request", { status: 400 });
+  }
+
+  if (!request.headers.get("user-agent")) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
   const host = request.headers.get("host")?.split(":")[0] ?? "";
 
   const devOverride =
@@ -21,6 +30,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const requestHeaders = new Headers(request.headers);
+  stripInternalHeaders(requestHeaders);
   requestHeaders.set("x-site-id", site.id);
   requestHeaders.set("x-site-lang", site.language);
   requestHeaders.set("x-site-country", site.countryCode);
@@ -29,6 +39,13 @@ export async function middleware(request: NextRequest) {
 
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
   const isLoginRoute = request.nextUrl.pathname.startsWith("/admin/login");
+
+  if (isAdminRoute) {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    if (isRateLimited(`admin:${ip}`)) {
+      return new NextResponse("Too Many Requests", { status: 429 });
+    }
+  }
 
   if (isAdminRoute && !isLoginRoute) {
     const supabase = createServerClient(

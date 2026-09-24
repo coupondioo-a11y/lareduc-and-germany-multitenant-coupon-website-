@@ -78,7 +78,7 @@ export default async function AllStoresLetterPage({
                   href={`/store/${s.slug}/`}
                   className="flex items-center gap-3 rounded-card border border-hair p-3 transition-colors duration-200 hover:bg-surface"
                 >
-                  <StoreLogo name={s.name} brand={s.brand} size={44} />
+                  <StoreLogo name={s.name} brand={s.brand} logoUrl={s.logoUrl} size={44} />
                   <span className="min-w-0">
                     <span className="block font-medium text-ink">{s.name}</span>
                     <span className="block text-[13px] text-ink-soft">

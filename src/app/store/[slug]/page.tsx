@@ -128,6 +128,7 @@ export default async function StorePage({ params }: { params: Promise<{ slug: st
         reviews={genuineReviews}
         seededCount={seededCount}
         otherStores={otherStores}
+        siteId={site.id}
       />
     </>
   );

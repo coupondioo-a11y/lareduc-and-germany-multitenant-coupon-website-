@@ -16,21 +16,25 @@ function hostFromUrl(url: string | null): string {
   }
 }
 
+const STORE_SELECT =
+  "id, name, slug, description, affiliate_url, logo_url, coupon_count, click_count, content_body, content_status";
+
 interface StoreRow {
   id: string;
   name: string;
   slug: string;
   description: string | null;
   affiliate_url: string | null;
+  logo_url: string | null;
   coupon_count: number;
   click_count: number;
   content_body: Store["content"] | null;
   content_status: string;
 }
 
-// Category assignment isn't populated by the scraper yet (store_categories
-// stays empty until Phase 5+ curates it) -- fall back to one bucket rather
-// than crash or show a blank chip.
+// Categories are admin-assignable (store_categories) but the storefront still
+// shows one fallback bucket -- wiring the real many-to-many through the
+// frontend's single `category` field is its own follow-up, not this pass's job.
 const FALLBACK_CATEGORY = { name: "Toutes les boutiques", slug: "toutes-les-boutiques" };
 
 function mapStore(row: StoreRow, rating: { value: number; count: number }): Store {
@@ -47,6 +51,7 @@ function mapStore(row: StoreRow, rating: { value: number; count: number }): Stor
     ratingCount: rating.count,
     domain: hostFromUrl(row.affiliate_url),
     affiliateUrl: row.affiliate_url ?? "",
+    logoUrl: row.logo_url,
     brand: brandColorFor(row.name),
     // FAQ schema only fires when approved, per the skill's content_status gate.
     content:
@@ -131,7 +136,7 @@ export async function getStoreBySlug(siteId: string, slug: string): Promise<Stor
   const supabase = createPublicClient();
   const { data } = await supabase
     .from("stores")
-    .select("id, name, slug, description, affiliate_url, coupon_count, click_count, content_body, content_status")
+    .select(STORE_SELECT)
     .eq("site_id", siteId)
     .eq("slug", slug)
     .eq("is_active", true)
@@ -181,7 +186,7 @@ export async function getAllStores(siteId: string): Promise<Store[]> {
   const supabase = createPublicClient();
   const { data } = await supabase
     .from("stores")
-    .select("id, name, slug, description, affiliate_url, coupon_count, click_count, content_body, content_status")
+    .select(STORE_SELECT)
     .eq("site_id", siteId)
     .eq("is_active", true)
     .order("name");
@@ -257,7 +262,7 @@ export async function getHeroSlides(siteId: string): Promise<HeroBanner[]> {
   const { data } = await supabase
     .from("hero_slides")
     .select(
-      "id, headline, figure, cta_label, cta_href, from_color, to_color, store:stores(id, name, slug, description, affiliate_url, coupon_count, click_count, content_body, content_status)"
+      `id, headline, figure, cta_label, cta_href, from_color, to_color, store:stores(${STORE_SELECT})`
     )
     .eq("site_id", siteId)
     .eq("is_active", true)
@@ -308,7 +313,7 @@ export async function getOtherStores(siteId: string, excludeSlug: string, limit:
   const supabase = createPublicClient();
   const { data } = await supabase
     .from("stores")
-    .select("id, name, slug, description, affiliate_url, coupon_count, click_count, content_body, content_status")
+    .select(STORE_SELECT)
     .eq("site_id", siteId)
     .eq("is_active", true)
     .neq("slug", excludeSlug)

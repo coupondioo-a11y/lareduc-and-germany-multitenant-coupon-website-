@@ -63,7 +63,7 @@ export function CouponRevealClient({
 
           <div className="p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4">
-              <StoreLogo name={store.name} brand={store.brand} size={56} />
+              <StoreLogo name={store.name} brand={store.brand} logoUrl={store.logoUrl} size={56} />
               <Link
                 href={`/store/${store.slug}/`}
                 aria-label="Fermer"
@@ -126,7 +126,7 @@ export function CouponRevealClient({
                       href={`/store/${s.slug}/`}
                       className="flex w-20 flex-col items-center gap-1.5 rounded-card border border-hair p-3 text-center transition-colors duration-200 hover:bg-surface"
                     >
-                      <StoreLogo name={s.name} brand={s.brand} size={40} />
+                      <StoreLogo name={s.name} brand={s.brand} logoUrl={s.logoUrl} size={40} />
                       <span className="truncate text-[12px] text-ink-soft">{s.name}</span>
                     </Link>
                   </li>

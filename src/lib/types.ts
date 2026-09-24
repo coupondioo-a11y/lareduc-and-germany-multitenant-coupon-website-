@@ -53,6 +53,7 @@ export interface Store {
   ratingCount: number;
   domain: string;
   affiliateUrl: string;
+  logoUrl?: string | null;
   brand: { bg: string; ink: string };
   content?: StoreContent;
 }

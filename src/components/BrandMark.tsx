@@ -1,9 +1,9 @@
+import Image from "next/image";
 import type { Store } from "@/lib/types";
 
 /**
- * Stand-in for a real store logo. The Logo Manager will later serve a
- * <=760px WebP through the CDN helper; until then each store renders as
- * its wordmark on its brand colour.
+ * Real logo (Logo Manager, <=760px WebP) when the store has one; otherwise
+ * a wordmark on its generated brand colour as a placeholder.
  */
 
 export function BrandTile({
@@ -13,7 +13,7 @@ export function BrandTile({
   height,
   className = "",
 }: {
-  store: Pick<Store, "name" | "brand">;
+  store: Pick<Store, "name" | "brand" | "logoUrl">;
   size?: number;
   width?: number;
   height?: number;
@@ -21,6 +21,18 @@ export function BrandTile({
 }) {
   const w = width ?? size;
   const h = height ?? size;
+
+  if (store.logoUrl) {
+    return (
+      <span
+        className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-card bg-white shadow-card ${className}`}
+        style={{ width: w, height: h }}
+      >
+        <Image src={store.logoUrl} alt="" width={w} height={h} className="h-full w-full object-contain p-1" unoptimized />
+      </span>
+    );
+  }
+
   return (
     <span
       aria-hidden

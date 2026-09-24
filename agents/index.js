@@ -3,22 +3,37 @@ import { discover } from "./discover.js";
 import { scrape } from "./scrape.js";
 import { extract } from "./extract.js";
 import { sync } from "./sync.js";
-import { COMPETITOR_DOMAINS, PAGES_PER_DOMAIN } from "./config.js";
 
-async function getSiteId(countryCode) {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+const PAGES_PER_DOMAIN = 3;
+
+function admin() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data, error } = await supabase.from("sites").select("id").eq("country_code", countryCode).single();
+}
+
+async function getSite(countryCode) {
+  const { data, error } = await admin().from("sites").select("id").eq("country_code", countryCode).single();
   if (error) throw new Error(`No site row for ${countryCode}: ${error.message}`);
   return data.id;
 }
 
-async function run() {
-  const siteId = await getSiteId("FR");
-  console.log(`Running auto-add scraper for site ${siteId}`);
+async function getTargets(siteId) {
+  const { data, error } = await admin()
+    .from("scrape_targets")
+    .select("domain, store_page_pattern")
+    .eq("site_id", siteId)
+    .eq("is_active", true);
+  if (error) throw new Error(`Could not read scrape_targets -- has migration 0003 run? ${error.message}`);
+  return data.map((t) => ({ domain: t.domain, storePagePattern: new RegExp(t.store_page_pattern) }));
+}
 
-  for (const { domain, storePagePattern } of COMPETITOR_DOMAINS) {
+async function run() {
+  const siteId = await getSite("FR");
+  const targets = await getTargets(siteId);
+  console.log(`Running auto-add scraper for site ${siteId} against ${targets.length} target(s)`);
+
+  for (const { domain, storePagePattern } of targets) {
     console.log(`\n[discover] ${domain}`);
     const urls = await discover(domain, storePagePattern, PAGES_PER_DOMAIN);
     console.log(`  found ${urls.length} candidate page(s)`);

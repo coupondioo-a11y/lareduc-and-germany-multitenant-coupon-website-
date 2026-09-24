@@ -37,6 +37,7 @@ export function StorePageBody({
   reviews,
   seededCount,
   otherStores,
+  siteId,
 }: {
   store: Store;
   coupons: Coupon[];
@@ -44,6 +45,7 @@ export function StorePageBody({
   reviews: Review[];
   seededCount: number;
   otherStores: Store[];
+  siteId: string;
 }) {
   const [tab, setTab] = useState<Tab>("all");
   const [briefingOpen, setBriefingOpen] = useState(false);
@@ -100,7 +102,7 @@ export function StorePageBody({
         <aside className="order-2 lg:order-1 lg:sticky lg:top-6 lg:h-fit">
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center justify-center rounded-card border border-hair bg-white p-4">
-              <StoreLogo name={store.name} brand={store.brand} size={72} />
+              <StoreLogo name={store.name} brand={store.brand} logoUrl={store.logoUrl} size={72} />
             </div>
             <h1 className="mt-4 font-serif text-xl text-ink sm:text-2xl">Codes promo {store.name}</h1>
             <div className="mt-2">
@@ -148,7 +150,7 @@ export function StorePageBody({
             </ul>
           </nav>
 
-          <ReportCodeBox storeName={store.name} className="mt-4" />
+          <ReportCodeBox storeName={store.name} siteId={siteId} coupons={coupons} className="mt-4" />
 
           {storeGrid.length > 0 ? (
             <div className="mt-4 glass rounded-2xl p-5">
@@ -329,7 +331,14 @@ export function StorePageBody({
 
       {/* 9. Customer reviews */}
       <Section id="avis" title="Avis clients">
-        <ReviewsBlock storeName={store.name} rating={rating} reviews={reviews} seededCount={seededCount} />
+        <ReviewsBlock
+          storeName={store.name}
+          storeId={store.id ?? ""}
+          siteId={siteId}
+          rating={rating}
+          reviews={reviews}
+          seededCount={seededCount}
+        />
       </Section>
 
       {/* 10. SEO content block — contained */}
@@ -367,11 +376,15 @@ export function StorePageBody({
 
 function ReviewsBlock({
   storeName,
+  storeId,
+  siteId,
   rating,
   reviews,
   seededCount,
 }: {
   storeName: string;
+  storeId: string;
+  siteId: string;
   rating: { value: number; count: number };
   reviews: Review[];
   seededCount: number;
@@ -379,6 +392,15 @@ function ReviewsBlock({
   const [picked, setPicked] = useState(0);
   const [hover, setHover] = useState(0);
   const [sent, setSent] = useState(false);
+  const [author, setAuthor] = useState("");
+  const [body, setBody] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const { submitReview } = await import("@/app/actions/reviews");
+    const result = await submitReview(siteId, storeId, author, picked, body);
+    if (result.ok) setSent(true);
+  }
 
   return (
     <div>
@@ -436,18 +458,15 @@ function ReviewsBlock({
             </div>
 
             {picked > 0 ? (
-              <form
-                className="mt-3 space-y-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setSent(true);
-                }}
-              >
+              <form className="mt-3 space-y-3" onSubmit={submit}>
                 <div>
                   <label htmlFor="rv-name" className="sr-only">Votre prénom</label>
                   <input
                     id="rv-name"
                     required
+                    minLength={2}
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
                     placeholder="Votre prénom"
                     className="h-11 w-full max-w-xs rounded-card border border-hair bg-paper px-3 text-base text-ink placeholder:text-ink-soft focus:border-primary focus-visible:outline-none"
                   />
@@ -457,7 +476,10 @@ function ReviewsBlock({
                   <textarea
                     id="rv-body"
                     required
+                    minLength={10}
                     rows={3}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
                     placeholder="Le code a-t-il fonctionné ? Sur quel panier ?"
                     className="w-full max-w-prose rounded-card border border-hair bg-paper p-3 text-base text-ink placeholder:text-ink-soft focus:border-primary focus-visible:outline-none"
                   />
@@ -509,8 +531,27 @@ function StoreIcon({ store }: { store: Store }) {
   );
 }
 
-function ReportCodeBox({ storeName, className = "" }: { storeName: string; className?: string }) {
+function ReportCodeBox({
+  storeName,
+  siteId,
+  coupons,
+  className = "",
+}: {
+  storeName: string;
+  siteId: string;
+  coupons: Pick<Coupon, "id" | "title">[];
+  className?: string;
+}) {
   const [sent, setSent] = useState(false);
+  const [couponId, setCouponId] = useState(coupons[0]?.id ?? "");
+  const [reason, setReason] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const { reportCoupon } = await import("@/app/actions/report");
+    const result = await reportCoupon(siteId, couponId, reason || "Le code ne fonctionne pas");
+    if (result.ok) setSent(true);
+  }
 
   return (
     <div className={`rounded-2xl border border-amber-200/80 bg-amber-50/70 p-5 backdrop-blur-xl ${className}`}>
@@ -523,21 +564,37 @@ function ReportCodeBox({ storeName, className = "" }: { storeName: string; class
       </p>
       {sent ? (
         <p className="mt-3 text-[13px] text-ink">Merci, nous vérifions ce code.</p>
-      ) : (
-        <>
+      ) : coupons.length > 0 ? (
+        <form onSubmit={submit} className="mt-3 flex flex-col gap-2">
+          <select
+            value={couponId}
+            onChange={(e) => setCouponId(e.target.value)}
+            className="h-10 rounded-card border border-hair bg-paper px-2 text-[13px] text-ink"
+          >
+            {coupons.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Que s'est-il passé ? (optionnel)"
+            className="h-10 rounded-card border border-hair bg-paper px-3 text-[13px] text-ink placeholder:text-ink-soft"
+          />
           <button
-            type="button"
-            onClick={() => setSent(true)}
-            className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-card bg-orange-600 text-sm font-medium text-white transition-colors duration-200 hover:bg-orange-700"
+            type="submit"
+            className="inline-flex h-10 w-full items-center justify-center rounded-card bg-orange-600 text-sm font-medium text-white transition-colors duration-200 hover:bg-orange-700"
           >
             Signaler un code
           </button>
-          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-ink-soft">
+          <p className="flex items-center gap-1.5 text-[12px] text-ink-soft">
             <Clock size={13} aria-hidden />
             Le message prend moins d&apos;une minute.
           </p>
-        </>
-      )}
+        </form>
+      ) : null}
     </div>
   );
 }

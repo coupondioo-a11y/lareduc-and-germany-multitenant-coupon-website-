@@ -7,11 +7,13 @@ const FALLBACK: Store["brand"] = { bg: "#0F172A", ink: "#FFFFFF" };
 export function StoreLogo({
   name,
   brand,
+  logoUrl,
   size = 48,
 }: {
   name: string;
   brand?: Store["brand"];
+  logoUrl?: string | null;
   size?: number;
 }) {
-  return <BrandTile store={{ name, brand: brand ?? FALLBACK }} size={size} />;
+  return <BrandTile store={{ name, brand: brand ?? FALLBACK, logoUrl }} size={size} />;
 }
