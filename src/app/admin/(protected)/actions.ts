@@ -74,9 +74,12 @@ export async function deleteSite(formData: FormData) {
 
   const admin = createAdminClient();
   const { data: site } = await admin.from("sites").select("country_code").eq("id", siteId).maybeSingle();
-  if (!site) throw new Error("Site introuvable");
-  if (site.country_code !== confirmCode) {
-    throw new Error(`Tapez ${site.country_code} pour confirmer la suppression`);
+
+  // A mismatch is an expected, user-typo outcome, not a bug -- redirect back
+  // with an inline error instead of throwing (a thrown Error from a plain
+  // <form action> crashes into Next's dev/error overlay, not a nice message).
+  if (!site || site.country_code !== confirmCode) {
+    redirect(`/admin/sites/${siteId}?error=confirm_mismatch`);
   }
 
   await admin.from("sites").delete().eq("id", siteId);

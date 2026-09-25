@@ -1,9 +1,17 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { deleteSite, updateSiteVerification } from "../../actions";
+import { ErrorBanner } from "../../ErrorBanner";
 
-export default async function SiteSettingsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SiteSettingsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { id } = await params;
+  const { error } = await searchParams;
   const admin = createAdminClient();
   const { data: site } = await admin
     .from("sites")
@@ -18,6 +26,7 @@ export default async function SiteSettingsPage({ params }: { params: Promise<{ i
       <h1 className="mb-4 text-lg font-semibold">
         {site.brand_name} ({site.country_code})
       </h1>
+      <ErrorBanner code={error} />
 
       <section className="mb-8">
         <h2 className="mb-2 font-medium">Vérifications</h2>

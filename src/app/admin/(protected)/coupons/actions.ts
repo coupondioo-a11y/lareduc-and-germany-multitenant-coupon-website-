@@ -62,16 +62,3 @@ export async function updateCoupon(formData: FormData) {
   revalidatePath("/admin/coupons");
   redirect("/admin/coupons");
 }
-
-export async function deleteCoupon(formData: FormData) {
-  const profile = await getCurrentAdminProfile();
-  requirePermission(profile, "coupons");
-
-  const id = String(formData.get("id") ?? "");
-  const storeId = String(formData.get("store_id") ?? "");
-  const admin = createAdminClient();
-  await admin.from("coupons").delete().eq("id", id);
-  await recomputeCouponCount(admin, storeId);
-
-  revalidatePath("/admin/coupons");
-}

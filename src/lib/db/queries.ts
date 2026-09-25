@@ -348,5 +348,64 @@ export const getHomepageData = unstable_cache(
     return { stores, featured, banners, counts, stats };
   },
   ["homepage-data"],
-  { revalidate: 3600 }
+  { revalidate: 3600, tags: ["homepage"] }
 );
+
+export interface EventPage {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
+export async function getEventBySlug(siteId: string, slug: string): Promise<EventPage | null> {
+  const supabase = createPublicClient();
+  const { data } = await supabase
+    .from("events")
+    .select("id, name, slug, description")
+    .eq("site_id", siteId)
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+  return data ?? null;
+}
+
+export async function getActiveEventSlugs(siteId: string): Promise<string[]> {
+  const supabase = createPublicClient();
+  const { data } = await supabase.from("events").select("slug").eq("site_id", siteId).eq("is_active", true);
+  return (data ?? []).map((e) => e.slug);
+}
+
+/** Every active offer of the stores assigned to an event, best first. */
+export async function getEventItems(siteId: string, eventId: string): Promise<{ coupon: Coupon; store: Store }[]> {
+  const supabase = createPublicClient();
+  const { data: links } = await supabase.from("event_stores").select("store_id").eq("event_id", eventId);
+  const storeIds = (links ?? []).map((l) => l.store_id);
+  if (storeIds.length === 0) return [];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const [{ data: storeRows }, { data: couponRows }] = await Promise.all([
+    supabase.from("stores").select(STORE_SELECT).eq("site_id", siteId).eq("is_active", true).in("id", storeIds),
+    supabase
+      .from("coupons")
+      .select(COUPON_SELECT)
+      .eq("site_id", siteId)
+      .eq("is_active", true)
+      .in("store_id", storeIds)
+      .or(`expiry_date.is.null,expiry_date.gte.${today}`)
+      .order("is_featured", { ascending: false })
+      .order("click_count", { ascending: false })
+      .limit(60),
+  ]);
+
+  const stores = new Map(
+    await Promise.all(
+      (storeRows ?? []).map(async (row) => [row.slug, mapStore(row, await ratingFor(siteId, row.id))] as const)
+    )
+  );
+
+  return (couponRows ?? [])
+    .map(mapCoupon)
+    .map((coupon) => ({ coupon, store: stores.get(coupon.storeSlug) }))
+    .filter((i): i is { coupon: Coupon; store: Store } => !!i.store);
+}

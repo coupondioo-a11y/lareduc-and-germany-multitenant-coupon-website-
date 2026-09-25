@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requirePermission, getCurrentAdminProfile } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteId } from "@/lib/admin-site";
@@ -24,7 +25,12 @@ export async function createCategory(formData: FormData) {
   const siteId = await getActiveSiteId();
   const admin = createAdminClient();
   const { error } = await admin.from("categories").insert({ site_id: siteId, name, slug: slugify(name) });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // 23505 = unique_violation -- a name that already exists is an expected
+    // outcome, not a bug, so it gets a friendly redirect, not a thrown crash.
+    if (error.code === "23505") redirect("/admin/categories?error=duplicate");
+    throw new Error(error.message);
+  }
 
   revalidatePath("/admin/categories");
 }

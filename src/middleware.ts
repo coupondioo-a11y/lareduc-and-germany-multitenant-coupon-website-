@@ -34,6 +34,7 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set("x-site-id", site.id);
   requestHeaders.set("x-site-lang", site.language);
   requestHeaders.set("x-site-country", site.countryCode);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 

@@ -19,7 +19,8 @@ export async function sync(siteId, sourceUrl, extracted) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const slug = slugify(extracted.storeName);
+  const { data: siteRow } = await supabase.from("sites").select("store_slug_pattern").eq("id", siteId).single();
+  const slug = (siteRow?.store_slug_pattern ?? "{store}").replace("{store}", slugify(extracted.storeName));
 
   const { data: existing } = await supabase
     .from("stores")

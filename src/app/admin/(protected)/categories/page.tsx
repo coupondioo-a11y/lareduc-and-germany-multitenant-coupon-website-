@@ -1,8 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteId } from "@/lib/admin-site";
 import { createCategory, deleteCategory } from "./actions";
+import { ErrorBanner } from "../ErrorBanner";
 
-export default async function AdminCategoriesPage() {
+export default async function AdminCategoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const siteId = await getActiveSiteId();
   const admin = createAdminClient();
   const { data: categories } = await admin
@@ -14,6 +20,7 @@ export default async function AdminCategoriesPage() {
   return (
     <div className="max-w-lg">
       <h1 className="mb-4 text-lg font-semibold">Catégories</h1>
+      <ErrorBanner code={error} />
 
       <form action={createCategory} className="mb-6 flex gap-2">
         <input

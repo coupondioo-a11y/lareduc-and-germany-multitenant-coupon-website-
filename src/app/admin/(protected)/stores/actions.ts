@@ -39,14 +39,3 @@ export async function updateStore(formData: FormData) {
   revalidatePath("/admin/stores");
   redirect("/admin/stores");
 }
-
-export async function deleteStore(formData: FormData) {
-  const profile = await getCurrentAdminProfile();
-  requirePermission(profile, "stores");
-
-  const id = String(formData.get("id") ?? "");
-  const admin = createAdminClient();
-  await admin.from("stores").delete().eq("id", id);
-
-  revalidatePath("/admin/stores");
-}

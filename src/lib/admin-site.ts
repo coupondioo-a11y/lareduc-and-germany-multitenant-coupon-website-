@@ -9,7 +9,7 @@ export async function getActiveSiteId(): Promise<string> {
   if (fromCookie) return fromCookie;
 
   const admin = createAdminClient();
-  const { data } = await admin.from("sites").select("id").order("country_code").limit(1).maybeSingle();
+  const { data } = await admin.from("sites").select("id").order("created_at").limit(1).maybeSingle();
   if (!data) throw new Error("No sites exist yet");
   return data.id;
 }

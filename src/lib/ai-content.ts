@@ -4,12 +4,20 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { StoreContent } from "@/lib/types";
 
 /**
- * TS port of agents/content/{facts,generate}.js for the admin's manual
- * "regenerate" button, which has to run inside a Next.js server action, not
- * the standalone agents/ package. The weekly-cron path stays in agents/ --
- * some duplication between a cron script and a serverless function is
- * simpler than sharing a package across two independently deployed runtimes.
+ * TS port of agents/content/{facts,generate}.js for admin-triggered
+ * generation, which has to run inside a Next.js server action. The weekly
+ * cron path stays in agents/ -- duplicating ~100 lines between a cron script
+ * and a serverless function is simpler than a shared package across two
+ * independently deployed runtimes.
  */
+
+export const LANGUAGE_NAMES: Record<string, string> = {
+  fr: "français",
+  de: "allemand",
+  es: "espagnol",
+  en: "anglais",
+  it: "italien",
+};
 
 interface StoreFacts {
   name: string;
@@ -36,18 +44,22 @@ async function gatherStoreFacts(storeId: string, storeName: string): Promise<Sto
     activeOffers: rows.length,
     activeCodes: withCode.length,
     bestDiscount: best,
-    exampleTitles: rows.slice(0, 5).map((c) => c.title),
+    exampleTitles: rows.slice(0, 6).map((c) => c.title),
   };
 }
 
-function factsBlock(facts: StoreFacts): string {
-  return [
+function factsBlock(facts: StoreFacts, brandContext?: string): string {
+  const lines = [
     `Boutique : ${facts.name}`,
     `Offres actives listées : ${facts.activeOffers}`,
     `Codes promo actifs : ${facts.activeCodes}`,
     `Meilleure réduction actuelle : ${facts.bestDiscount ?? "non communiquée"}`,
     `Exemples d'offres : ${facts.exampleTitles.join(" / ") || "aucun"}`,
-  ].join("\n");
+  ];
+  if (brandContext) {
+    lines.push("", "Extrait du site officiel de la marque (source de faits sur la marque, à reformuler, jamais copier) :", brandContext);
+  }
+  return lines.join("\n");
 }
 
 const BANNED_PHRASES = [
@@ -59,22 +71,26 @@ const BANNED_PHRASES = [
   "en un clin d'œil",
 ];
 
-const CONTENT_SYSTEM = `Tu écris le contenu éditorial d'une page de codes promo française, à partir de faits réels fournis. Règles :
-- Utilise UNIQUEMENT les faits fournis. Ne promets jamais une réduction non confirmée par les faits. Si une information est inconnue (livraison, retours), reste prudent ("généralement", "sous réserve des conditions en vigueur") plutôt que d'inventer un chiffre.
+function contentSystem(language: string): string {
+  const langName = LANGUAGE_NAMES[language] ?? language;
+  return `Tu es rédacteur SEO pour un site de codes promo. Tu écris le contenu éditorial complet d'une page boutique, à partir de faits réels fournis. TOUT le contenu doit être rédigé en ${langName}. Règles :
+- Utilise UNIQUEMENT les faits fournis (offres et extrait du site officiel). Ne promets jamais une réduction non confirmée. Si une information est inconnue (livraison, retours), reste prudent ("généralement", "sous réserve des conditions en vigueur") plutôt que d'inventer un chiffre.
+- Optimisation SEO : place naturellement le nom de la boutique et l'expression "code promo" (dans la langue cible) dans les intertitres et les questions de la FAQ ; les FAQ répondent à de vraies requêtes de recherche (utiliser un code, cumul, livraison, retours, meilleur moment pour acheter). Pas de bourrage de mots-clés.
+- Style humain : varie la longueur des phrases et la structure, ton de conseiller concret, aucune formule de remplissage.
 - Texte brut uniquement. Jamais d'astérisques, dièses, backticks ou tirets de liste -- la page affiche les caractères littéralement et c'est illisible.
-- Interdit d'utiliser ces mots/tournures : ${BANNED_PHRASES.join(", ")}.
-- Varie la longueur des phrases et la structure : ne pas appliquer un modèle identique à chaque boutique.
+- Interdit d'utiliser ces tournures (ou leur équivalent dans la langue cible) : ${BANNED_PHRASES.join(", ")}.
 Réponds UNIQUEMENT avec un objet JSON valide au format exact :
 {
-  "description": "string, 2-3 phrases",
+  "description": "string, 2-3 phrases (présentation de la boutique)",
   "h2Sections": [{ "h2": "string", "body": "string" }] (2 sections),
-  "faqs": [{ "q": "string", "a": "string" }] (3 questions),
-  "policies": [{ "title": "string", "note": "string" }] (4 entrées : Livraison, Retours, Paiement, Service client),
+  "faqs": [{ "q": "string", "a": "string" }] (4 questions),
+  "policies": [{ "title": "string", "note": "string" }] (4 entrées : livraison, retours, paiement, service client),
   "checkoutGuide": { "intro": "string", "steps": ["string"] } (4 étapes),
   "expertGuide": { "intro": "string", "sections": [{ "h2": "string", "body": "string" }] } (2 sections),
   "proTips": ["string"] (3 astuces),
   "intelligenceBriefing": { "intro": "string", "savingsAnalysis": ["string"] (2-3 points), "insider": "string" }
 }`;
+}
 
 function stripFences(text: string): string {
   return text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
@@ -82,6 +98,7 @@ function stripFences(text: string): string {
 
 function validShape(content: Partial<StoreContent>): content is StoreContent {
   return (
+    typeof content.description === "string" &&
     Array.isArray(content.policies) &&
     !!content.expertGuide?.sections?.length &&
     !!content.checkoutGuide?.steps?.length &&
@@ -90,7 +107,11 @@ function validShape(content: Partial<StoreContent>): content is StoreContent {
   );
 }
 
-export async function regenerateStoreContent(storeId: string, storeName: string): Promise<StoreContent> {
+export async function regenerateStoreContent(
+  storeId: string,
+  storeName: string,
+  opts: { language?: string; brandContext?: string } = {}
+): Promise<StoreContent> {
   const facts = await gatherStoreFacts(storeId, storeName);
 
   const res = await fetch("https://api.deepseek.com/chat/completions", {
@@ -102,13 +123,13 @@ export async function regenerateStoreContent(storeId: string, storeName: string)
     body: JSON.stringify({
       model: "deepseek-chat",
       messages: [
-        { role: "system", content: CONTENT_SYSTEM },
-        { role: "user", content: factsBlock(facts) },
+        { role: "system", content: contentSystem(opts.language ?? "fr") },
+        { role: "user", content: factsBlock(facts, opts.brandContext) },
       ],
       temperature: 0.7,
     }),
   });
-  if (!res.ok) throw new Error(`DeepSeek call failed with ${res.status}`);
+  if (!res.ok) throw new Error(`DeepSeek a répondu ${res.status}`);
 
   const data = await res.json();
   const raw = data.choices?.[0]?.message?.content ?? "";

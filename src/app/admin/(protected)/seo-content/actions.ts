@@ -3,22 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { requirePermission, getCurrentAdminProfile } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { regenerateStoreContent } from "@/lib/ai-content";
+import { regenerateStoreSeo } from "@/lib/store-import";
 
 export async function regenerate(formData: FormData) {
   const profile = await getCurrentAdminProfile();
   requirePermission(profile, "seo_content");
 
   const storeId = String(formData.get("store_id") ?? "");
-  const storeName = String(formData.get("store_name") ?? "");
-
-  const content = await regenerateStoreContent(storeId, storeName);
-
-  const admin = createAdminClient();
-  await admin
-    .from("stores")
-    .update({ content_body: content, content_status: "draft", content_generated_at: new Date().toISOString() })
-    .eq("id", storeId);
+  const result = await regenerateStoreSeo(storeId);
+  if (!result.ok) throw new Error(result.error ?? "Génération échouée");
 
   revalidatePath(`/admin/seo-content/${storeId}`);
 }

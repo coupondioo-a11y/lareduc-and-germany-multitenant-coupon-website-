@@ -228,3 +228,49 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ------------------------------------------------------------------------
+   Admin panel dark theme. Scoped to .admin-dark so the public storefront is
+   untouched; remaps the neutral utility classes the admin pages already use.
+   ------------------------------------------------------------------------ */
+.admin-dark {
+  color-scheme: dark;
+  background: #05070d;
+  color: #e6e9f2;
+  font-size: 14px;
+}
+.admin-dark .text-neutral-400,
+.admin-dark .text-neutral-500 { color: #7f889d; }
+.admin-dark .text-neutral-600,
+.admin-dark .text-neutral-700 { color: #a4acbf; }
+.admin-dark .border-neutral-200,
+.admin-dark .border-neutral-300,
+.admin-dark .border-b,
+.admin-dark .border-r { border-color: #1a2233; }
+.admin-dark .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: #1a2233; }
+.admin-dark .bg-neutral-100 { background: #0f1626; }
+.admin-dark .bg-neutral-50,
+.admin-dark .hover\:bg-neutral-50:hover { background: #0c1220; }
+.admin-dark .bg-neutral-900 { background: #facc15; color: #0b0d12; font-weight: 600; }
+.admin-dark .bg-neutral-900.text-white { color: #0b0d12; }
+.admin-dark .text-orange-700 { color: #fbbf24; }
+.admin-dark input,
+.admin-dark select,
+.admin-dark textarea {
+  background: #0a0f1c;
+  color: #e6e9f2;
+  border-color: #1f2a3f;
+}
+.admin-dark input::placeholder,
+.admin-dark textarea::placeholder { color: #566079; }
+.admin-dark input:focus,
+.admin-dark select:focus,
+.admin-dark textarea:focus { outline: none; border-color: #facc15; }
+.admin-dark .bg-red-50 { background: rgba(127, 29, 29, 0.25); }
+.admin-dark .border-red-200,
+.admin-dark .border-red-300 { border-color: rgba(220, 38, 38, 0.45); }
+.admin-dark .text-red-800,
+.admin-dark .text-red-900 { color: #fca5a5; }
+.admin-dark .text-red-600 { color: #f87171; }
+.admin-dark table thead tr { background: #0a0f1c; }
+.admin-dark table tbody tr:hover { background: #0a101d; }

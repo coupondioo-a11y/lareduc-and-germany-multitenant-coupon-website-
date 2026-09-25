@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -30,6 +31,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const site = await getSiteContext();
+  const pathname = (await headers()).get("x-pathname") ?? "";
+
+  // The admin panel is its own app shell: no public header/footer, no analytics/consent banner.
+  if (pathname.startsWith("/admin")) {
+    return (
+      <html lang="fr" className={sans.variable}>
+        <body>{children}</body>
+      </html>
+    );
+  }
 
   return (
     <html lang={site.language} className={sans.variable}>
